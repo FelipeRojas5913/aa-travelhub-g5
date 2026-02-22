@@ -1,89 +1,126 @@
-# 3rd Party Libraries
+import os
 import pytz
 import time
 import random
 import logging
-from datetime import datetime, timezone
-from flask import Flask, jsonify, request
+from datetime import datetime
+from flask import Flask, jsonify
 from apscheduler.schedulers.background import BackgroundScheduler
+from sqlalchemy import create_engine, text
 
-# Configuración del logger
-logging.basicConfig(format = '\n%(asctime)s %(message)s', datefmt = '%Y-%m-%d %H:%M:%S %p: ', level = logging.INFO)
+logging.basicConfig(
+    format='\n%(asctime)s %(message)s',
+    datefmt='%Y-%m-%d %H:%M:%S %p: ',
+    level=logging.INFO
+)
 logger = logging.getLogger('usuarios')
 
-# Instanciar app
 app = Flask(__name__)
 
-# Establecer el servicio intento del servicio
+SERVICE_NAME = 'usuarios'
+DATABASE_URL = os.environ.get('DATABASE_URL', 'postgresql://travelhub:travelhub@localhost:5432/travelhub')
+
+engine = None
+
+
+def get_engine():
+    global engine
+    if engine is None:
+        engine = create_engine(DATABASE_URL)
+    return engine
+
+
+def init_db():
+    for attempt in range(15):
+        try:
+            eng = get_engine()
+            with eng.connect() as conn:
+                conn.execute(text("""
+                    CREATE TABLE IF NOT EXISTS service_state_events (
+                        id SERIAL PRIMARY KEY,
+                        service VARCHAR(50) NOT NULL,
+                        state VARCHAR(20) NOT NULL,
+                        delay_ms FLOAT,
+                        changed_at TIMESTAMPTZ DEFAULT NOW()
+                    )
+                """))
+                conn.commit()
+            logger.info(f"{SERVICE_NAME} -> DB initialized")
+            return
+        except Exception as e:
+            logger.warning(f"{SERVICE_NAME} -> DB not ready (attempt {attempt + 1}/15): {e}")
+            time.sleep(3)
+
+
+def log_state_change(state, delay_ms):
+    try:
+        eng = get_engine()
+        with eng.connect() as conn:
+            conn.execute(
+                text("INSERT INTO service_state_events (service, state, delay_ms) VALUES (:s, :st, :d)"),
+                {"s": SERVICE_NAME, "st": state, "d": delay_ms}
+            )
+            conn.commit()
+    except Exception as e:
+        logger.error(f"{SERVICE_NAME} -> Failed to log state change: {e}")
+
+
 service_state = {"status": "healthy", "delay": 0}
 
+
 def random_failure():
-    """Simula fallos y degradaciones aleatorias"""
-    
-    # Generar un número aleatorio entre 0 y 1
     roll = random.random()
 
-    # En caso de que el número sea menor a 0.3
     if roll < 0.3:
-        
-        # Actualizar el status a degraded
         service_state["status"] = "degraded"
-
-        # Establecer una demora aleatoria entre 2 y 5 segundos
         service_state["delay"] = random.uniform(2, 5)
+        logger.info(f"{SERVICE_NAME} -> DEGRADED (delay: {service_state['delay']:.1f}s)")
+        log_state_change("degraded", service_state["delay"] * 1000)
 
-        # Imprimir mensaje de log
-        logger.info(f"usuarios -> DEGRADED (delay: {service_state['delay']:.1f}s)")
-
-    # En caso de que el número sea menor a 0.5
     elif roll < 0.5:
-        
-        # Actualizar el status a unhealthy
         service_state["status"] = "unhealthy"
-
-        # Establecer una demora de 0
         service_state["delay"] = 0
+        logger.info(f"{SERVICE_NAME} -> UNHEALTHY")
+        log_state_change("unhealthy", 0)
 
-        # Imprimir mensaje de log
-        logger.info(f"usuarios -> UNHEALTHY")
-
-    # Con un roll superior a 0.5
     else:
-
-        # Actualizar el status a healthy
         service_state["status"] = "healthy"
-
-        # Establecer una demora de 0
         service_state["delay"] = 0
+        logger.info(f"{SERVICE_NAME} -> HEALTHY")
+        log_state_change("healthy", 0)
 
-        # Imprimir mensaje de log
-        logger.info(f"usuarios -> HEALTHY")
 
-# Instanciar el cronjob
+init_db()
+
 scheduler = BackgroundScheduler()
-
-# Programar el cronjob cada 15-30 segundos
-scheduler.add_job(random_failure, 'interval', seconds = random.randint(15, 30))
-
-# Iniciar el cronjob
+scheduler.add_job(random_failure, 'interval', seconds=random.randint(15, 30))
 scheduler.start()
 
-# Api de Health
-@app.route('/usuarios/health', methods = ['GET'])
+
+@app.route('/health', methods=['GET'])
 def health():
-    """Permite consultar el estado del servicio"""
+    start = time.time()
 
-    # Si el servicio está unhealthy, retornar un código de estado 500
     if service_state["status"] == "unhealthy":
-        return jsonify({"service": "usuarios", "status": "unhealthy", "timestamp": datetime.now(pytz.timezone('America/Bogota')).strftime('%Y-%m-%d %H:%M:%S %Z')}), 500
+        elapsed_ms = round((time.time() - start) * 1000, 2)
+        return jsonify({
+            "service": SERVICE_NAME,
+            "status": "unhealthy",
+            "response_time_ms": elapsed_ms,
+            "timestamp": datetime.now(pytz.timezone('America/Bogota')).strftime('%Y-%m-%d %H:%M:%S %Z')
+        }), 500
 
-    # Si el servicio está degraded, esperar el tiempo de demora
-    elif service_state["status"] == "degraded":
+    if service_state["status"] == "degraded":
         time.sleep(service_state["delay"])
 
-    # Retornar un código de estado 200
-    return jsonify({"service": "usuarios", "status": service_state["status"], "timestamp": datetime.now(pytz.timezone('America/Bogota')).strftime('%Y-%m-%d %H:%M:%S %Z')}), 200
+    elapsed_ms = round((time.time() - start) * 1000, 2)
+    return jsonify({
+        "service": SERVICE_NAME,
+        "status": service_state["status"],
+        "response_time_ms": elapsed_ms,
+        "timestamp": datetime.now(pytz.timezone('America/Bogota')).strftime('%Y-%m-%d %H:%M:%S %Z')
+    }), 200
 
-# Iniciar servicio
+
 if __name__ == '__main__':
-    app.run(host = '0.0.0.0', port = 5004, debug = True)
+    app.run(host='0.0.0.0', port=5004, debug=False)
