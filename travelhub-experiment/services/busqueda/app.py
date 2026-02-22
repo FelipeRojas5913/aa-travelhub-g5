@@ -3,7 +3,7 @@ import pytz
 import time
 import random
 import logging
-from datetime import datetime
+from datetime import datetime, timedelta
 from flask import Flask, jsonify
 from apscheduler.schedulers.background import BackgroundScheduler
 from sqlalchemy import create_engine, text
@@ -93,7 +93,9 @@ def random_failure():
 init_db()
 
 scheduler = BackgroundScheduler()
-scheduler.add_job(random_failure, 'interval', seconds=random.randint(15, 30))
+
+end_time = datetime.now() + timedelta(minutes=10)
+scheduler.add_job(random_failure, 'interval', seconds=random.randint(15, 30), end_date=end_time)
 scheduler.start()
 
 
