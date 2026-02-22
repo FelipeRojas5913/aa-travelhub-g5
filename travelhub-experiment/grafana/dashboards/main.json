@@ -25,7 +25,115 @@
     {
       "datasource": {
         "type": "grafana-postgresql-datasource",
-        "uid": "travelhub-postgres"
+        "uid": "P44368ADAD746BC27"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "fillOpacity": 80,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "lineWidth": 1,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "purple",
+                "value": 0
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 0
+      },
+      "id": 1,
+      "options": {
+        "barRadius": 0,
+        "barWidth": 0.97,
+        "fullHighlight": false,
+        "groupWidth": 0.7,
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "orientation": "auto",
+        "showValue": "auto",
+        "stacking": "none",
+        "tooltip": {
+          "hideZeros": false,
+          "mode": "single",
+          "sort": "none"
+        },
+        "xTickLabelRotation": 0,
+        "xTickLabelSpacing": 0
+      },
+      "pluginVersion": "12.3.3",
+      "targets": [
+        {
+          "dataset": "travelhub",
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "efe1nb8mgj9q8e"
+          },
+          "editorMode": "code",
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT\r\nservice,\r\nCOUNT(*) AS total_by_service\r\nFROM monitor_checks\r\nGROUP BY service;",
+          "refId": "A",
+          "sql": {
+            "columns": [
+              {
+                "parameters": [],
+                "type": "function"
+              }
+            ],
+            "groupBy": [
+              {
+                "property": {
+                  "type": "string"
+                },
+                "type": "groupBy"
+              }
+            ],
+            "limit": 50
+          }
+        }
+      ],
+      "title": "Monitoreos Totales",
+      "type": "barchart"
+    },
+    {
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "P44368ADAD746BC27"
       },
       "fieldConfig": {
         "defaults": {
@@ -57,7 +165,7 @@
       "gridPos": {
         "h": 8,
         "w": 12,
-        "x": 0,
+        "x": 12,
         "y": 0
       },
       "id": 2,
@@ -112,12 +220,22 @@
     {
       "datasource": {
         "type": "grafana-postgresql-datasource",
-        "uid": "efe1nb8mgj9q8e"
+        "uid": "P44368ADAD746BC27"
       },
       "fieldConfig": {
         "defaults": {
           "color": {
             "mode": "thresholds"
+          },
+          "custom": {
+            "align": "auto",
+            "cellOptions": {
+              "type": "auto"
+            },
+            "footer": {
+              "reducers": []
+            },
+            "inspect": false
           },
           "mappings": [],
           "thresholds": {
@@ -128,12 +246,8 @@
                 "value": 0
               },
               {
-                "color": "#EAB839",
-                "value": 1
-              },
-              {
-                "color": "dark-red",
-                "value": 2
+                "color": "red",
+                "value": 80
               }
             ]
           }
@@ -141,41 +255,24 @@
         "overrides": []
       },
       "gridPos": {
-        "h": 8,
-        "w": 12,
+        "h": 11,
+        "w": 24,
         "x": 0,
         "y": 8
       },
-      "id": 1,
+      "id": 3,
       "options": {
-        "colorMode": "value",
-        "graphMode": "area",
-        "justifyMode": "auto",
-        "orientation": "auto",
-        "percentChangeColorMode": "standard",
-        "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ],
-          "fields": "",
-          "values": false
-        },
-        "showPercentChange": false,
-        "textMode": "auto",
-        "wideLayout": true
+        "cellHeight": "sm",
+        "showHeader": true
       },
       "pluginVersion": "12.3.3",
       "targets": [
         {
           "dataset": "travelhub",
-          "datasource": {
-            "type": "grafana-postgresql-datasource",
-            "uid": "efe1nb8mgj9q8e"
-          },
           "editorMode": "code",
           "format": "table",
           "rawQuery": true,
-          "rawSql": "SELECT\r\nservice,\r\nCOUNT(*) AS total_by_service\r\nFROM monitor_checks\r\nGROUP BY service;",
+          "rawSql": "WITH detections AS (                                                                             \n  SELECT                                                \n  e.service,                                                                               \n  e.state AS real_state,                                                                   \n  m.status AS detected_status,\n  m.response_time_ms,\n  ROUND(EXTRACT(EPOCH FROM (m.checked_at - e.changed_at))::numeric, 1) AS delay_s,\n  CASE\n      WHEN e.state = 'unhealthy' AND m.status = 'DOWN'     THEN 'CORRECT'\n      WHEN e.state = 'degraded'  AND m.status = 'DEGRADED' THEN 'CORRECT'\n      WHEN e.state = 'healthy'   AND m.status = 'HEALTHY'  THEN 'CORRECT'\n      WHEN m.status IS NULL                                 THEN 'NOT_DETECTED'\n      ELSE 'WRONG'\n      END AS result,\n      e.changed_at\n  FROM service_state_events e\n  LEFT JOIN LATERAL (\n      SELECT status, response_time_ms, checked_at\n      FROM monitor_checks\n      WHERE service = e.service AND checked_at >= e.changed_at\n      ORDER BY checked_at ASC\n      LIMIT 1\n  ) m ON true\n)\nSELECT real_state, detected_status, response_time_ms, delay_s, result, changed_at\nFROM detections\nWHERE result = 'WRONG'\nORDER BY changed_at;",
           "refId": "A",
           "sql": {
             "columns": [
@@ -196,8 +293,8 @@
           }
         }
       ],
-      "title": "Monitoreos Totales",
-      "type": "stat"
+      "title": "Detecciones Incorrectas",
+      "type": "table"
     }
   ],
   "preload": false,
