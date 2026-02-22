@@ -31,7 +31,7 @@ deactivate .venv
 
 ```
 cd travelhub-experiment/
-docker-compose up --build
+sudo docker-compose up --build
 ```
 
 6. Para consultar el estado de los servicios, abra una nueva terminal y ejecute los siguientes comandos:
@@ -81,3 +81,10 @@ curl http://localhost:5004/usuarios/health
 ```
 sudo docker-compose down
 ```
+
+> [!CAUTION]
+> En caso de que el experimento presente el siguiente error: KeyError: 'ContainerConfig', ejecute los comandos:
+> ```
+> sudo docker-compose down --rmi all --volumes
+> sudo docker-compose up --build
+> ``` 
