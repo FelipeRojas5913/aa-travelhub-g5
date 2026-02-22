@@ -1,44 +1,122 @@
 version: '3.8'
 
-services:  
+services:
+
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: travelhub
+      POSTGRES_PASSWORD: travelhub
+      POSTGRES_DB: travelhub
+      TZ: America/Bogota
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U travelhub -d travelhub"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    networks:
+      - travelhub-net
+
   busqueda:
     build: ./services/busqueda
     ports:
       - "5000:5000"
     environment:
       - TZ=America/Bogota
+      - DATABASE_URL=postgresql://travelhub:travelhub@postgres:5432/travelhub
+    depends_on:
+      postgres:
+        condition: service_healthy
     networks:
       - travelhub-net
+
   inventario:
     build: ./services/inventario
     ports:
       - "5001:5001"
     environment:
       - TZ=America/Bogota
+      - DATABASE_URL=postgresql://travelhub:travelhub@postgres:5432/travelhub
+    depends_on:
+      postgres:
+        condition: service_healthy
     networks:
       - travelhub-net
+
   ordenes:
     build: ./services/ordenes
     ports:
       - "5002:5002"
+    environment:
+      - TZ=America/Bogota
+      - DATABASE_URL=postgresql://travelhub:travelhub@postgres:5432/travelhub
+    depends_on:
+      postgres:
+        condition: service_healthy
     networks:
       - travelhub-net
+
   reservas:
     build: ./services/reservas
     ports:
       - "5003:5003"
+
     environment:
       - TZ=America/Bogota
+      - DATABASE_URL=postgresql://travelhub:travelhub@postgres:5432/travelhub
+    depends_on:
+      postgres:
+        condition: service_healthy
     networks:
       - travelhub-net
+
   usuarios:
     build: ./services/usuarios
     ports:
       - "5004:5004"
     environment:
       - TZ=America/Bogota
+      - DATABASE_URL=postgresql://travelhub:travelhub@postgres:5432/travelhub
+    depends_on:
+      postgres:
+        condition: service_healthy
     networks:
       - travelhub-net
+
+  monitor:
+    build: ./monitor
+    ports:
+      - "8080:8080"
+    environment:
+      - TZ=America/Bogota
+      - DATABASE_URL=postgresql://travelhub:travelhub@postgres:5432/travelhub
+      - BUSQUEDA_URL=http://busqueda:5000/health
+      - INVENTARIO_URL=http://inventario:5001/health
+      - ORDENES_URL=http://ordenes:5002/health
+      - RESERVAS_URL=http://reservas:5003/health
+      - USUARIOS_URL=http://usuarios:5004/health
+    depends_on:
+      postgres:
+        condition: service_healthy
+      busqueda:
+        condition: service_started
+      inventario:
+        condition: service_started
+      ordenes:
+        condition: service_started
+      reservas:
+        condition: service_started
+      usuarios:
+        condition: service_started
+    networks:
+      - travelhub-net
+
+volumes:
+  postgres_data:
 
 networks:
   travelhub-net:
