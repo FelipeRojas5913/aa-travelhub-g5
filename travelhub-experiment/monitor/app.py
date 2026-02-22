@@ -2,7 +2,7 @@ import os
 import time
 import logging
 from collections import deque
-from datetime import datetime
+from datetime import datetime, timedelta
 
 import pytz
 import requests
@@ -146,7 +146,9 @@ def poll_all_services():
 init_db()
 
 scheduler = BackgroundScheduler()
-scheduler.add_job(poll_all_services, 'interval', seconds=10)
+
+end_time = datetime.now() + timedelta(minutes=10)
+scheduler.add_job(poll_all_services, 'interval', seconds=10, end_date= end_time)
 scheduler.start()
 
 # Run first check immediately on startup
