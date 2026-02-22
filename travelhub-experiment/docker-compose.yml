@@ -64,7 +64,6 @@ services:
     build: ./services/reservas
     ports:
       - "5003:5003"
-
     environment:
       - TZ=America/Bogota
       - DATABASE_URL=postgresql://travelhub:travelhub@postgres:5432/travelhub
@@ -115,8 +114,27 @@ services:
     networks:
       - travelhub-net
 
+  grafana:
+    image: grafana/grafana-oss:latest
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+      - GF_USERS_ALLOW_SIGN_UP=false
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./grafana/provisioning:/etc/grafana/provisioning
+      - ./grafana/dashboards:/etc/grafana/dashboards
+    networks:
+      - travelhub-net
+
 volumes:
   postgres_data:
+  grafana_data:
 
 networks:
   travelhub-net:
