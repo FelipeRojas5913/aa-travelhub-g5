@@ -1,20 +1,23 @@
 apiVersion: 1
 
 datasources:
-  - name: TravelHub Postgres
-    uid: travelhub-postgres
+  - name: Postgres
     type: postgres
     access: proxy
     isDefault: true
-    editable: false
 
     url: postgres:5432
-    database: travelhub
     user: travelhub
 
     secureJsonData:
       password: travelhub
 
     jsonData:
+      database: travelhub
       sslmode: disable
+      maxOpenConns: 100
+      maxIdleConns: 100
+      maxIdleConnsAuto: true
+      connMaxLifetime: 14400
       postgresVersion: 1600
+      timescaledb: false
