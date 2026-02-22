@@ -19,13 +19,13 @@
   "editable": true,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 0,
-  "id": 0,
+  "id": 2,
   "links": [],
   "panels": [
     {
       "datasource": {
         "type": "grafana-postgresql-datasource",
-        "uid": "efe1nb8mgj9q8e"
+        "uid": "travelhub-postgres"
       },
       "fieldConfig": {
         "defaults": {
@@ -85,7 +85,7 @@
           "editorMode": "code",
           "format": "table",
           "rawQuery": true,
-          "rawSql": "SELECT\r\n      ROUND(100.0 * COUNT(*) FILTER (WHERE result = 'CORRECT') / COUNT(*), 1) AS accuracy_pct\r\n  FROM (\r\n      SELECT\r\n          CASE\r\n              WHEN e.state = 'unhealthy' AND m.status = 'DOWN'     THEN 'CORRECT'\r\n              WHEN e.state = 'degraded'  AND m.status = 'DEGRADED' THEN 'CORRECT'\r\n              WHEN e.state = 'healthy'   AND m.status = 'HEALTHY'  THEN 'CORRECT'\r\n              ELSE 'WRONG'\r\n          END AS result\r\n      FROM service_state_events e\r\n      LEFT JOIN LATERAL (\r\n          SELECT status\r\n          FROM monitor_checks\r\n          WHERE service = e.service AND checked_at >= e.changed_at\r\n          ORDER BY checked_at ASC\r\n          LIMIT 1\r\n      ) m ON true\r\n  ) t;",
+          "rawSql": "SELECT                                                                                           \r\n      ROUND(100.0 * COUNT(*) FILTER (WHERE result = 'CORRECT') / COUNT(*), 1) AS accuracy_pct\r\n  FROM (                                                                                           \r\n      SELECT                                                \r\n          CASE                                                                                     \r\n              WHEN e.state = 'unhealthy' AND m.status = 'DOWN'     THEN 'CORRECT'                  \r\n              WHEN e.state = 'degraded'  AND m.status = 'DEGRADED' THEN 'CORRECT'\r\n              WHEN e.state = 'healthy'   AND m.status = 'HEALTHY'  THEN 'CORRECT'\r\n              ELSE 'WRONG'\r\n          END AS result\r\n      FROM service_state_events e\r\n      LEFT JOIN LATERAL (\r\n          SELECT status\r\n          FROM monitor_checks\r\n          WHERE service = e.service AND checked_at >= e.changed_at\r\n          ORDER BY checked_at ASC\r\n          LIMIT 1\r\n      ) m ON true\r\n  ) t;",
           "refId": "A",
           "sql": {
             "columns": [
@@ -214,5 +214,5 @@
   "timezone": "browser",
   "title": "TravelHub Monitor Dashboard",
   "uid": "adjftsl",
-  "version": 5
+  "version": 1
 }

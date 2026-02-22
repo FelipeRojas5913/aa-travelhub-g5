@@ -18,5 +18,3 @@ datasources:
     jsonData:
       sslmode: disable
       postgresVersion: 1600
-      timescaledb: false
-      timezone: America/Bogota
