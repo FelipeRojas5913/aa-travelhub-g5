@@ -1,0 +1,13 @@
+services:
+  autorizador:
+    build: ./autorizador
+    ports:
+      - "8001:8001"
+    environment:
+      JWT_SECRET: ${JWT_SECRET:-supersecret-dev-only}
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8001/login')"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 5s
