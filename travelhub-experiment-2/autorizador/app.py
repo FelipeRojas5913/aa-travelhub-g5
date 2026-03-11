@@ -35,14 +35,10 @@ def forward_request(service_url, path):
         content_type=resp.headers.get('Content-Type')
     )
 
-@app.route("/log/<path:path>", methods=["GET","POST","PUT","DELETE"])
+@app.route("/API/<path:path>", methods=["GET","POST","PUT","DELETE"])
 def log(path):
     return forward_request("http://localhost:8001/", path)
 
-
-@app.route("/val/<path:path>", methods=["GET","POST","PUT","DELETE"])
-def val(path):
-    return forward_request("http://localhost:8001/", path)
 
 @app.route("/login", methods=["POST"])
 def login():
