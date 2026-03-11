@@ -36,12 +36,12 @@ def forward_request(service_url, path):
     )
 
 @app.route("/log/<path:path>", methods=["GET","POST","PUT","DELETE"])
-def login(path):
+def log(path):
     return forward_request("http://localhost:8001/", path)
 
 
 @app.route("/val/<path:path>", methods=["GET","POST","PUT","DELETE"])
-def validate(path):
+def val(path):
     return forward_request("http://localhost:8001/", path)
 
 @app.route("/login", methods=["POST"])
