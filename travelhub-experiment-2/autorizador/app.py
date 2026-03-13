@@ -81,6 +81,10 @@ def validate():
         return jsonify({"error": "Token expired"}), 401
     except jwt.InvalidTokenError as e:
         return jsonify({"error": f"Invalid token: {str(e)}"}), 401
+    
+@app.route('/', methods=['GET'])
+def root():
+    return jsonify({"service": "autorizador", "status": "healthy"}), 200
 
 
 if __name__ == "__main__":

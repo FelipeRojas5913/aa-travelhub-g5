@@ -4,10 +4,57 @@ services:
     ports:
       - "8001:8001"
     environment:
-      JWT_SECRET: ${JWT_SECRET:-supersecret-dev-only}
+      - JWT_SECRET=travelhub-secret-key-2026
     healthcheck:
-      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8001/API/login')"]
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8001/')"]
       interval: 10s
       timeout: 5s
       retries: 3
       start_period: 5s
+
+  reservas:
+    build: ./reservas
+    ports:
+      - "5003:5003"
+    environment:
+      - JWT_SECRET=travelhub-secret-key-2026
+      - DB_HOST=db
+      - DB_PORT=5432
+      - DB_NAME=travelhub
+      - DB_USER=travelhub
+      - DB_PASSWORD=travelhub123
+      - TZ=America/Bogota
+    depends_on:
+      - db
+    networks:
+      - travelhub-net
+
+  db:
+    image: postgres:15
+    environment:
+      - POSTGRES_DB=travelhub
+      - POSTGRES_USER=travelhub
+      - POSTGRES_PASSWORD=travelhub123
+      - TZ=America/Bogota
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    networks:
+      - travelhub-net
+
+  grafana:
+    image: grafana/grafana:latest
+    ports:
+      - "3000:3000"
+    environment:
+      - TZ=America/Bogota
+    networks:
+      - travelhub-net
+
+networks:
+  travelhub-net:
+    driver: bridge
+
+volumes:
+  pgdata:
