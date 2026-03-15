@@ -1,94 +1,231 @@
 {
-  "title": "TravelHub — Detección de Token Tampering",
-  "uid": "travelhub-intrusion",
-  "schemaVersion": 38,
-  "version": 1,
-  "refresh": "10s",
+  "annotations": {
+    "list": [
+      {
+        "builtIn": 1,
+        "datasource": {
+          "type": "grafana",
+          "uid": "-- Grafana --"
+        },
+        "enable": true,
+        "hide": true,
+        "iconColor": "rgba(0, 211, 255, 1)",
+        "name": "Annotations & Alerts",
+        "type": "dashboard"
+      }
+    ]
+  },
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 0,
+  "links": [],
   "panels": [
     {
+      "datasource": {
+        "type": "postgres",
+        "uid": "Postgres"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "align": "auto",
+            "cellOptions": {
+              "type": "auto"
+            },
+            "footer": {
+              "reducers": []
+            },
+            "inspect": false
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": 0
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 24,
+        "x": 0,
+        "y": 0
+      },
       "id": 1,
-      "title": "Resultados por Escenario",
-      "type": "table",
-      "gridPos": {"x": 0, "y": 0, "w": 24, "h": 8},
-      "datasource": {"type": "postgres", "uid": "Postgres"},
+      "options": {
+        "cellHeight": "sm",
+        "showHeader": true,
+        "sortBy": [
+          {
+            "displayName": "first_seen"
+          }
+        ]
+      },
+      "pluginVersion": "12.4.1",
       "targets": [
         {
+          "format": "table",
           "rawSql": "SELECT scenario, action_taken, COUNT(*) AS total, MIN(timestamp) AS first_seen, MAX(timestamp) AS last_seen FROM intrusion_log GROUP BY scenario, action_taken ORDER BY first_seen",
-          "format": "table"
+          "refId": "A"
         }
       ],
-      "options": {"sortBy": [{"displayName": "first_seen"}]}
+      "title": "Resultados por Escenario",
+      "type": "table"
     },
     {
-      "id": 2,
-      "title": "Doble Canal — JWT OK pero Fingerprint FAIL",
-      "type": "stat",
-      "gridPos": {"x": 0, "y": 8, "w": 8, "h": 4},
-      "datasource": {"type": "postgres", "uid": "Postgres"},
-      "targets": [
-        {
-          "rawSql": "SELECT COUNT(*) AS value FROM intrusion_log WHERE jti_found_in_db = false OR fingerprint_match = false",
-          "format": "table"
-        }
-      ],
-      "options": {"reduceOptions": {"calcs": ["lastNotNull"]}, "colorMode": "background"},
-      "fieldConfig": {"defaults": {"color": {"mode": "fixed", "fixedColor": "red"}}}
-    },
-    {
+      "datasource": {
+        "type": "postgres",
+        "uid": "Postgres"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "fixedColor": "orange",
+            "mode": "fixed"
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": 0
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 11,
+        "x": 0,
+        "y": 8
+      },
       "id": 3,
-      "title": "Tokens Forjados Detectados",
-      "type": "stat",
-      "gridPos": {"x": 8, "y": 8, "w": 8, "h": 4},
-      "datasource": {"type": "postgres", "uid": "Postgres"},
+      "options": {
+        "colorMode": "background",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "percentChangeColorMode": "standard",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showPercentChange": false,
+        "textMode": "auto",
+        "wideLayout": true
+      },
+      "pluginVersion": "12.4.1",
       "targets": [
         {
+          "format": "table",
           "rawSql": "SELECT COUNT(*) AS value FROM intrusion_log WHERE action_taken = 'BLOCKED'",
-          "format": "table"
+          "refId": "A"
         }
       ],
-      "options": {"reduceOptions": {"calcs": ["lastNotNull"]}, "colorMode": "background"},
-      "fieldConfig": {"defaults": {"color": {"mode": "fixed", "fixedColor": "orange"}}}
+      "title": "Tokens maliciosos detectados",
+      "type": "stat"
     },
     {
+      "datasource": {
+        "type": "postgres",
+        "uid": "Postgres"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "fixedColor": "green",
+            "mode": "fixed"
+          },
+          "mappings": [],
+          "max": 100,
+          "min": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": 0
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "percent"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 13,
+        "x": 11,
+        "y": 8
+      },
       "id": 4,
-      "title": "Tasa de Detección (%)",
-      "type": "stat",
-      "gridPos": {"x": 16, "y": 8, "w": 8, "h": 4},
-      "datasource": {"type": "postgres", "uid": "Postgres"},
+      "options": {
+        "colorMode": "background",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "percentChangeColorMode": "standard",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showPercentChange": false,
+        "textMode": "auto",
+        "wideLayout": true
+      },
+      "pluginVersion": "12.4.1",
       "targets": [
         {
+          "format": "table",
           "rawSql": "SELECT ROUND(100.0 * SUM(CASE WHEN action_taken = 'BLOCKED' THEN 1 ELSE 0 END) / NULLIF(COUNT(*), 0), 2) AS value FROM intrusion_log",
-          "format": "table"
+          "refId": "A"
         }
       ],
-      "options": {"reduceOptions": {"calcs": ["lastNotNull"]}, "colorMode": "background"},
-      "fieldConfig": {"defaults": {"color": {"mode": "fixed", "fixedColor": "green"}, "unit": "percent"}}
-    },
-    {
-      "id": 5,
-      "title": "Timeline de Intentos de Intrusión",
-      "type": "timeseries",
-      "gridPos": {"x": 0, "y": 12, "w": 24, "h": 8},
-      "datasource": {"type": "postgres", "uid": "Postgres"},
-      "targets": [
-        {
-          "rawSql": "SELECT $__timeGroupAlias(timestamp, '1m'), scenario, COUNT(*) AS count FROM intrusion_log WHERE $__timeFilter(timestamp) GROUP BY 1, scenario ORDER BY 1",
-          "format": "time_series"
-        }
-      ]
-    },
-    {
-      "id": 6,
-      "title": "Log de Auditoría Completo",
-      "type": "table",
-      "gridPos": {"x": 0, "y": 20, "w": 24, "h": 10},
-      "datasource": {"type": "postgres", "uid": "Postgres"},
-      "targets": [
-        {
-          "rawSql": "SELECT timestamp, scenario, jti_presented, jti_found_in_db, fingerprint_match, action_taken, ip_address, details FROM intrusion_log ORDER BY timestamp DESC LIMIT 100",
-          "format": "table"
-        }
-      ]
+      "title": "Tasa de Detección (%)",
+      "type": "stat"
     }
-  ]
+  ],
+  "preload": false,
+  "refresh": "10s",
+  "schemaVersion": 42,
+  "tags": [],
+  "templating": {
+    "list": []
+  },
+  "time": {
+    "from": "now-6h",
+    "to": "now"
+  },
+  "timepicker": {},
+  "timezone": "browser",
+  "title": "TravelHub — Detección de Token Tampering",
+  "uid": "travelhub-intrusion",
+  "version": 1,
+  "weekStart": ""
 }
