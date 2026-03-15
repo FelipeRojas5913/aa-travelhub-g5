@@ -6,11 +6,11 @@ datasources:
     access: proxy
     isDefault: true
 
-    url: postgres:5432
+    url: db:5432
     user: travelhub
 
     secureJsonData:
-      password: travelhub
+      password: travelhub123
 
     jsonData:
       database: travelhub
