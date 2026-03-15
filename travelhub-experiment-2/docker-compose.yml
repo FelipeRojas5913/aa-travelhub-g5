@@ -41,6 +41,12 @@ services:
         condition: service_healthy
     networks:
       - travelhub-net
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:5003/reservas/health')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
 
   db:
     image: postgres:15
@@ -74,6 +80,18 @@ services:
       - ./grafana/provisioning:/etc/grafana/provisioning
     depends_on:
       - db
+    networks:
+      - travelhub-net
+
+  test-runner:
+    build:
+      context: .
+      dockerfile: test-runner/Dockerfile
+    depends_on:
+      autorizador:
+        condition: service_healthy
+      reservas:
+        condition: service_healthy
     networks:
       - travelhub-net
 

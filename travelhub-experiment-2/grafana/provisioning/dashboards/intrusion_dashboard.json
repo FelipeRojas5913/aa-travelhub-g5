@@ -10,7 +10,7 @@
       "title": "Resultados por Escenario",
       "type": "table",
       "gridPos": {"x": 0, "y": 0, "w": 24, "h": 8},
-      "datasource": {"type": "postgres", "uid": "${DS_TRAVELHUB_POSTGRESQL}"},
+      "datasource": {"type": "postgres", "uid": "Postgres"},
       "targets": [
         {
           "rawSql": "SELECT scenario, action_taken, COUNT(*) AS total, MIN(timestamp) AS first_seen, MAX(timestamp) AS last_seen FROM intrusion_log GROUP BY scenario, action_taken ORDER BY first_seen",
@@ -24,7 +24,7 @@
       "title": "Doble Canal — JWT OK pero Fingerprint FAIL",
       "type": "stat",
       "gridPos": {"x": 0, "y": 8, "w": 8, "h": 4},
-      "datasource": {"type": "postgres", "uid": "${DS_TRAVELHUB_POSTGRESQL}"},
+      "datasource": {"type": "postgres", "uid": "Postgres"},
       "targets": [
         {
           "rawSql": "SELECT COUNT(*) AS value FROM intrusion_log WHERE jti_found_in_db = false OR fingerprint_match = false",
@@ -39,7 +39,7 @@
       "title": "Tokens Forjados Detectados",
       "type": "stat",
       "gridPos": {"x": 8, "y": 8, "w": 8, "h": 4},
-      "datasource": {"type": "postgres", "uid": "${DS_TRAVELHUB_POSTGRESQL}"},
+      "datasource": {"type": "postgres", "uid": "Postgres"},
       "targets": [
         {
           "rawSql": "SELECT COUNT(*) AS value FROM intrusion_log WHERE action_taken = 'BLOCKED'",
@@ -54,7 +54,7 @@
       "title": "Tasa de Detección (%)",
       "type": "stat",
       "gridPos": {"x": 16, "y": 8, "w": 8, "h": 4},
-      "datasource": {"type": "postgres", "uid": "${DS_TRAVELHUB_POSTGRESQL}"},
+      "datasource": {"type": "postgres", "uid": "Postgres"},
       "targets": [
         {
           "rawSql": "SELECT ROUND(100.0 * SUM(CASE WHEN action_taken = 'BLOCKED' THEN 1 ELSE 0 END) / NULLIF(COUNT(*), 0), 2) AS value FROM intrusion_log",
@@ -69,7 +69,7 @@
       "title": "Timeline de Intentos de Intrusión",
       "type": "timeseries",
       "gridPos": {"x": 0, "y": 12, "w": 24, "h": 8},
-      "datasource": {"type": "postgres", "uid": "${DS_TRAVELHUB_POSTGRESQL}"},
+      "datasource": {"type": "postgres", "uid": "Postgres"},
       "targets": [
         {
           "rawSql": "SELECT $__timeGroupAlias(timestamp, '1m'), scenario, COUNT(*) AS count FROM intrusion_log WHERE $__timeFilter(timestamp) GROUP BY 1, scenario ORDER BY 1",
@@ -82,21 +82,13 @@
       "title": "Log de Auditoría Completo",
       "type": "table",
       "gridPos": {"x": 0, "y": 20, "w": 24, "h": 10},
-      "datasource": {"type": "postgres", "uid": "${DS_TRAVELHUB_POSTGRESQL}"},
+      "datasource": {"type": "postgres", "uid": "Postgres"},
       "targets": [
         {
           "rawSql": "SELECT timestamp, scenario, jti_presented, jti_found_in_db, fingerprint_match, action_taken, ip_address, details FROM intrusion_log ORDER BY timestamp DESC LIMIT 100",
           "format": "table"
         }
       ]
-    }
-  ],
-  "__inputs": [
-    {
-      "name": "DS_TRAVELHUB_POSTGRESQL",
-      "label": "TravelHub PostgreSQL",
-      "type": "datasource",
-      "pluginId": "postgres"
     }
   ]
 }
