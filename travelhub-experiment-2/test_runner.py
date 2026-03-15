@@ -16,7 +16,7 @@ import requests
 from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.serialization import load_pem_public_key
 
-ITERATIONS = 3
+ITERATIONS = 10
 
 BASE_HEADERS = {
     "Content-Type": "application/json",
