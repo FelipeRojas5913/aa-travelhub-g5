@@ -2,22 +2,8 @@ services:
   autorizador:
     build: ./autorizador
     ports:
-      - "8001:8001"
+      - "5001:5001"
     environment:
-      - JWT_SECRET=travelhub-secret-key-2026
-    healthcheck:
-      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8001/')"]
-      interval: 10s
-      timeout: 5s
-      retries: 3
-      start_period: 5s
-
-  reservas:
-    build: ./reservas
-    ports:
-      - "5003:5003"
-    environment:
-      - JWT_SECRET=travelhub-secret-key-2026
       - DB_HOST=db
       - DB_PORT=5432
       - DB_NAME=travelhub
@@ -25,7 +11,34 @@ services:
       - DB_PASSWORD=travelhub123
       - TZ=America/Bogota
     depends_on:
-      - db
+      db:
+        condition: service_healthy
+    networks:
+      - travelhub-net
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:5001/')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
+
+  reservas:
+    build: ./reservas
+    ports:
+      - "5003:5003"
+    environment:
+      - AUTORIZADOR_URL=http://autorizador:5001
+      - DB_HOST=db
+      - DB_PORT=5432
+      - DB_NAME=travelhub
+      - DB_USER=travelhub
+      - DB_PASSWORD=travelhub123
+      - TZ=America/Bogota
+    depends_on:
+      db:
+        condition: service_healthy
+      autorizador:
+        condition: service_healthy
     networks:
       - travelhub-net
 
@@ -42,6 +55,12 @@ services:
       - pgdata:/var/lib/postgresql/data
     networks:
       - travelhub-net
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U travelhub -d travelhub"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
 
   grafana:
     image: grafana/grafana:latest
@@ -49,6 +68,12 @@ services:
       - "3000:3000"
     environment:
       - TZ=America/Bogota
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+      - GF_INSTALL_PLUGINS=grafana-postgresql-datasource
+    volumes:
+      - ./grafana/provisioning:/etc/grafana/provisioning
+    depends_on:
+      - db
     networks:
       - travelhub-net
 

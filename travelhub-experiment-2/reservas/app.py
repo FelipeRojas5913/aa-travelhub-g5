@@ -5,9 +5,9 @@ import logging
 import datetime
 
 # 3rd Party Libraries
-import jwt
 import pytz
 import psycopg2
+import requests
 from flask import Flask, request, jsonify
 
 # Instanciar la aplicación Flask
@@ -20,9 +20,7 @@ bogota_tz = pytz.timezone('America/Bogota')
 logging.basicConfig(format = '\n%(asctime)s [%(name)s] %(message)s', level = logging.INFO)
 logger = logging.getLogger('reservas')
 
-# Configuración de JWT
-JWT_SECRET = os.environ.get("JWT_SECRET", "dev-secret")
-JWT_ALGORITHM = "HS256"
+AUTORIZADOR_URL = os.environ.get("AUTORIZADOR_URL", "http://autorizador:5001")
 
 # Reservas simuladas en memoria
 RESERVAS = {1: {"reserva_id": 1, "user_id": 1, "hotel": "Hotel Bogotá Plaza", "fecha": "2026-04-10", "huespedes": 2},
@@ -129,34 +127,33 @@ def log_experiment(test_type, token_desc, expected, actual, status, passed):
 
 
 def validate_token():
-    """Extrae y valida el token JWT del header Authorization"""
+    """Extrae el token del header y lo valida contra el autorizador (doble canal)."""
 
-    # Obtenemos el token del header Authorization
     auth_header = request.headers.get("Authorization")
-
-    # Si no hay token o no es un token JWT, respondemos con error 401
-    if not auth_header or not auth_header.startswith("Bearer "):        
+    if not auth_header or not auth_header.startswith("Bearer "):
         return None, "Missing or invalid Authorization header"
 
-    # Extraemos el token del header
     token = auth_header.split(" ")[1]
-    
-    # Intentamos decodificar el token y extraer los claims, si el token es inválido o ha expirado, respondemos con error 401
+
+    # Forward original client context so autorizador can verify fingerprint
+    client_ip = request.headers.get("X-Forwarded-For", request.remote_addr)
+    client_ua = request.headers.get("User-Agent", "")
+
     try:
-        
-        # Decodificamos el token y extraemos los claims
-        claims = jwt.decode(token, JWT_SECRET, algorithms = [JWT_ALGORITHM])
-        
-        # Retornamos los claims y None
-        return claims, None
-    
-    # Si el token ha expirado, respondemos con None y "Token expired"
-    except jwt.ExpiredSignatureError:
-        return None, "Token expired"
-    
-    # Si el token no es válido, respondemos con None y el mensaje de error
-    except jwt.InvalidTokenError as e:
-        return None, f"Invalid token: {str(e)}"
+        resp = requests.post(
+            f"{AUTORIZADOR_URL}/validate",
+            json={"token": token, "client_ip": client_ip, "client_ua": client_ua},
+            timeout=5,
+        )
+    except requests.exceptions.RequestException as e:
+        return None, f"Autorizador unavailable: {str(e)}"
+
+    if resp.status_code == 200:
+        body = resp.json()
+        return body.get("claims"), None
+
+    body = resp.json()
+    return None, body.get("error", body.get("reason", "Unauthorized"))
 
 @app.route('/reservas/health', methods = ['GET'])
 def health():
